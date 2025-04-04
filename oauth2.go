@@ -3,6 +3,7 @@ package gcp
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -59,12 +60,30 @@ func (g *Gcp) GetOAuth2IdToken(scope []string) (*oauth2.Token, error) {
 
 // The function returns a JWT configuration and an error, given a key byte and a scope.
 func getJwtConfig(keyByte []byte, scope []string) (*jwt.Config, error) {
-	jwt, err := google.JWTConfigFromJSON(keyByte, scope...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to obtain JWT Config for scope %s <%w>", scope, err)
+
+	if len(keyByte) > 0 {
+		jwt, err := google.JWTConfigFromJSON(keyByte, scope...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to obtain JWT Config for scope %s <%w>", scope, err)
+		}
+
+		return jwt, nil
 	}
 
-	return jwt, nil
+	return nil, nil
+}
+
+// The churn function
+func getDefaultClient(ctx context.Context, scope []string) (*http.Client, error) {
+
+	//_, error := google.FindDefaultCredentials(ctx, scope...)
+	client, error := google.DefaultClient(ctx, scope...)
+	if error != nil {
+		return nil, fmt.Errorf("failed to obtain default client via metadata server or ADC %s <%w>", scope, error)
+	}
+
+	return client, nil
+
 }
 
 // The function returns a JWT token source for a given set of credentials and scope.
@@ -75,4 +94,14 @@ func getTokenSource(keyByte []byte, scope []string) (oauth2.TokenSource, error) 
 	}
 
 	return ts, nil
+}
+
+func getDefaultTokenSource(ctx context.Context, scope []string) (oauth2.TokenSource, error) {
+
+	tokenSource, err := google.DefaultTokenSource(ctx, scope...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get default token source %s <%w>", scope, err)
+	}
+
+	return tokenSource, err
 }

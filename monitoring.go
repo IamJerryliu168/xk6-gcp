@@ -61,3 +61,40 @@ func queryClient(ctx context.Context, ts oauth2.TokenSource) (*monitoring.QueryC
 
 	return c, nil
 }
+
+func (g *Gcp) QueryTimeSeriesChurned(projectId string, query string) ([]*monitoringpb.TimeSeriesData, error) {
+	ctx := context.Background()
+	tokenResource, err := getDefaultTokenSource(ctx, g.scope)
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := queryClient(ctx, tokenResource)
+	if err != nil {
+		return nil, err
+	}
+
+	req := &monitoringpb.QueryTimeSeriesRequest{
+		Name:  "projects/" + projectId,
+		Query: query,
+	}
+
+	iter := c.QueryTimeSeries(ctx, req)
+
+	var result []*monitoringpb.TimeSeriesData
+
+	for {
+		resp, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("could not list time series: %w", err)
+		}
+		result = append(result, resp)
+	}
+
+	defer c.Close()
+
+	return result, nil
+}

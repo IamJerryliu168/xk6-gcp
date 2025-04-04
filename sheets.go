@@ -201,16 +201,26 @@ func (g *Gcp) sheetClient() {
 	if g.sheet == nil {
 		ctx := context.Background()
 		jwt, err := getJwtConfig(g.keyByte, g.scope)
+
 		if err != nil {
 			log.Fatalf("could not get JWT config with scope %s <%v>.", g.scope, err)
 		}
 
-		c, err := sheets.NewService(ctx, option.WithTokenSource(jwt.TokenSource(ctx)))
-		if err != nil {
-			log.Fatalf("could not initialize Sheets client <%v>.", err)
-		}
+		if jwt != nil {
+			c, err := sheets.NewService(ctx, option.WithTokenSource(jwt.TokenSource(ctx)))
+			if err != nil {
+				log.Fatalf("could not initialize Sheets client with jwt <%v>.", err)
+			}
+			g.sheet = c
+		} else {
+			client, err := getDefaultClient(ctx, g.scope)
 
-		g.sheet = c
+			c, err := sheets.NewService(ctx, option.WithHTTPClient(client))
+			if err != nil {
+				log.Fatalf("Unable to retrieve Sheets client <%v>.", err)
+			}
+			g.sheet = c
+		}
 	}
 }
 
