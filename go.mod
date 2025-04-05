@@ -1,4 +1,4 @@
-module github.com/deejiw/xk6-gcp
+module github.com/IamJerryliu168/xk6-gcp
 
 go 1.20
 
