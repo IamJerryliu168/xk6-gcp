@@ -172,7 +172,8 @@ func withGcpConstructorKey(key ServiceAccountKey, env string) func(*Gcp) error {
 			return nil
 		}
 
-		return fmt.Errorf("service account key not found. Please use %s or input 'key' parameter", env)
+		return nil
+		//return fmt.Errorf("service account key not found. Please use %s or input 'key' parameter", env)
 	}
 }
 
