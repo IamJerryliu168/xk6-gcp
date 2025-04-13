@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func GetRunningPodByKeyword(namespace, keyword string) (string, error) {
+func (g *Gcp) GetRunningPodByKeyword(namespace, keyword string) (string, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return "", fmt.Errorf("Can't load InCluster settings: %v", err)
