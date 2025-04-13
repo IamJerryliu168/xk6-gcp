@@ -62,7 +62,7 @@ func queryClient(ctx context.Context, ts oauth2.TokenSource) (*monitoring.QueryC
 	return c, nil
 }
 
-func (g *Gcp) QueryTimeSeriesChurned(projectId string, query string) ([]*monitoringpb.TimeSeriesData, error) {
+func (g *Gcp) QueryTimeSeriesChurned(projectId string, query string) (map[string]float64, error) {
 	ctx := context.Background()
 	tokenResource, err := getDefaultTokenSource(ctx, g.scope)
 	if err != nil {
@@ -95,6 +95,32 @@ func (g *Gcp) QueryTimeSeriesChurned(projectId string, query string) ([]*monitor
 	}
 
 	defer c.Close()
+
+	return convertNewTimeSeriesDataToMap(result)
+}
+
+func convertNewTimeSeriesDataToMap(seriesList []*monitoringpb.TimeSeriesData) (map[string]float64, error) {
+	result := make(map[string]float64)
+
+	for _, ts := range seriesList {
+		for _, pointData := range ts.GetPointData() {
+			interval := pointData.GetTimeInterval()
+			if interval == nil || interval.GetEndTime() == nil {
+				continue
+			}
+
+			endTime := interval.GetEndTime().AsTime()
+			formattedTime := endTime.Format("2006-01-02 15:04:05")
+
+			values := pointData.GetValues()
+			if len(values) == 0 {
+				continue
+			}
+
+			floatVal := values[0].GetDoubleValue()
+			result[formattedTime] = floatVal
+		}
+	}
 
 	return result, nil
 }
